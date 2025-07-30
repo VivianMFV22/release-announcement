@@ -8,14 +8,18 @@ Tool tự động để tạo release announcement từ dữ liệu Jira thô sa
 ```
 release-announcement/
 ├── data/
-│   ├── processed/           # Dữ liệu đã xử lý (nếu có)
-│   └── raw/                # Dữ liệu Jira thô
+│   ├── processed/           # Dữ liệu đã chia nhỏ theo tháng
+│   │   ├── release-data-YYYY-MM-and-YYYY-MM.md
+│   │   └── ... (10 files for different month pairs)
+│   └── raw/                # Dữ liệu Jira thô (gốc)
 │       └── Release announcement .md
 ├── instructions/
 │   ├── processing-prompt.md # Hướng dẫn xử lý cho AI
 │   └── terms.md            # Dictionary thuật ngữ tiếng Nhật chuẩn
 ├── output/                 # Release notes được tạo ra
 │   └── release-notes-YYYY-MM-DD-japanese.md
+├── scripts/                # Scripts quản lý dữ liệu
+│   └── split_data_by_month.py  # Script chia file raw theo tháng
 └── templates/
     └── release-announcement-template.md
 ```
@@ -26,10 +30,20 @@ release-announcement/
 - Đặt file dữ liệu Jira thô vào thư mục `data/raw/`
 - Format: `STL-XXXX, Updated Time: ..., Ticket Type: ..., Epic: ..., Title: ..., Release date: YYYY-MM-DD`
 
-### 2. Xử lý với AI
+### 2. Chia nhỏ dữ liệu (Tùy chọn)
+- Chạy script `python3 scripts/split_data_by_month.py` để chia file raw thành các file nhỏ
+- **Logic chia file**: Mỗi file chứa dữ liệu của 2 tháng liên tiếp
+  - File `release-data-2025-05-and-2025-06.md` → chứa data tháng 5 + tháng 6
+  - File `release-data-2025-06-and-2025-07.md` → chứa data tháng 6 + tháng 7
+  - File `release-data-2025-07-and-2025-08.md` → chứa data tháng 7 + tháng 8
+- **Kết quả**: 876 tickets → 10 files, tên file sử dụng format số tháng đơn giản
+- **Lợi ích**: Tăng tốc độ xử lý, dễ quản lý dữ liệu theo giai đoạn
+
+### 3. Xử lý với AI
 - Đọc hướng dẫn trong `instructions/processing-prompt.md`
 - **Quan trọng**: AI sẽ sử dụng `instructions/terms.md` làm dictionary chuẩn
 - Yêu cầu AI xử lý dữ liệu theo ngày release cụ thể
+- **Nguồn dữ liệu**: Có thể sử dụng file raw gốc hoặc file đã chia nhỏ trong `data/processed/`
 - AI sẽ tự động:
   - Lọc tickets theo ngày release
   - Phân loại theo Ticket Type (Story/Epic → メイン機能, Technical improvement → 改善, Bug → 不具合)
@@ -37,16 +51,17 @@ release-announcement/
   - Dịch sang tiếng Nhật sử dụng thuật ngữ chuẩn
   - Tạo file output có cấu trúc
 
-### 3. Kết quả
+### 4. Kết quả
 - File release notes tiếng Nhật được tạo trong thư mục `output/`
 - Format: `release-notes-YYYY-MM-DD-japanese.md`
 
 ## Đặc điểm
 
 ### ✅ Tự động hóa
-- Không cần code, chỉ cần AI assistant
-- Xử lý dữ liệu thô trực tiếp
+- Không cần code, chỉ cần AI assistant  
+- Xử lý dữ liệu thô trực tiếp hoặc từ file đã chia nhỏ
 - Tự động phân loại và nhóm tickets
+- Script tự động chia file theo tháng (876 tickets → 10 files)
 
 ### ✅ Format tiếng Nhật chuẩn
 - **Thuật ngữ consistency**: Sử dụng dictionary từ `terms.md`

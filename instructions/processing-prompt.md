@@ -18,16 +18,62 @@ STL-XXXX, Updated Time: YYYY-MM-DDTHH:mm:ss.sssZ, Ticket Type: [Type], Epic: [Ep
 
 ## Quy trình xử lý
 
-### Bước 0: Tìm kiếm dữ liệu theo Release date
-**Phương pháp tìm kiếm tickets:**
-1. **Grep search cho exact date**: `grep "Release date: YYYY-MM-DD"` 
-   - Ví dụ: `grep "Release date: 2025-08-05"`
-2. **Grep search cho date pattern**: `grep "YYYY-MM-DD"` để tìm tất cả references
-   - Ví dụ: `grep "2025-08-05"` sẽ tìm cả single date và multiple dates
-3. **Xác nhận tìm thấy dữ liệu**: Nếu không tìm thấy tickets cho ngày được yêu cầu, thông báo và đề xuất ngày khác có sẵn
-4. **Parse kết quả**: Đọc chi tiết các dòng tìm thấy để lấy thông tin đầy đủ về tickets
+### Bước 0: Cập nhật và chia nhỏ dữ liệu (BẮT BUỘC)
+**Trước khi bắt đầu tạo announcement report, luôn thực hiện các bước sau:**
 
-### Bước 1: Lọc dữ liệu
+1. **Clear processed data**: Xóa tất cả dữ liệu cũ trong thư mục processed
+   ```bash
+   rm -rf data/processed/*.md
+   ```
+
+2. **Chạy script chia file**: Sử dụng script để chia file raw mới nhất thành các file nhỏ theo tháng
+   ```bash
+   python3 scripts/split_data_by_month.py
+   ```
+
+3. **Xác nhận kết quả**: Kiểm tra các file đã được tạo trong `data/processed/` với format:
+   - `release-data-YYYY-MM-and-YYYY-MM.md`
+   - Mỗi file chứa dữ liệu của 2 tháng liên tiếp
+   - Tổng cộng sẽ có khoảng 10 files với 876+ tickets
+
+**Lợi ích của việc chia file:**
+- Tăng tốc độ xử lý khi tìm kiếm dữ liệu theo ngày cụ thể
+- Dễ quản lý và navigation dữ liệu theo giai đoạn
+- Giảm thời gian load khi đọc file lớn
+- Data luôn được cập nhật từ source mới nhất
+
+### Bước 1: Tìm kiếm dữ liệu theo Release date
+**Phương pháp tìm kiếm tickets từ file đã chia nhỏ:**
+
+1. **⚠️ QUAN TRỌNG - Tìm kiếm toàn diện**: Tickets có cùng release date có thể xuất hiện trong NHIỀU files khác nhau do logic chia file theo 2 tháng liên tiếp. Do đó, **LUÔN LUÔN** tìm kiếm trong TẤT CẢ files processed, không chỉ file theo tháng release.
+   - Ví dụ: Ticket có `Release date: 2025-08-05` có thể xuất hiện trong:
+     - `release-data-2025-07-and-2025-08.md` (chứa tháng 7 + tháng 8)
+     - `release-data-2025-08-and-2025-09.md` (chứa tháng 8 + tháng 9)
+     - Thậm chí trong các file khác nếu ticket được cập nhật nhiều lần
+
+2. **Tìm kiếm bắt buộc trên TẤT CẢ files**: 
+   ```bash
+   # Command chính - LUÔN sử dụng command này TRƯỚC
+   grep "2025-08-05" data/processed/*.md
+   
+   # Command chi tiết hơn để tìm exact pattern
+   grep "Release date.*2025-08-05" data/processed/*.md
+   ```
+
+3. **Xác nhận coverage đầy đủ**:
+   ```bash
+   # Kiểm tra tất cả files có chứa ngày này
+   grep -l "2025-08-05" data/processed/*.md
+   
+   # Đếm tổng số dòng tìm thấy
+   grep -c "2025-08-05" data/processed/*.md
+   ```
+
+4. **Xác nhận tìm thấy dữ liệu**: Nếu không tìm thấy tickets cho ngày được yêu cầu, thông báo và đề xuất ngày khác có sẵn
+
+5. **Parse kết quả từ TẤT CẢ files**: Đọc chi tiết các dòng tìm thấy từ tất cả files để lấy thông tin đầy đủ và loại bỏ duplicates sau
+
+### Bước 2: Lọc dữ liệu
 1. **Chọn target date**: Tìm ngày có nhiều tickets nhất hoặc theo yêu cầu cụ thể
 2. **Filter by date**: Chỉ lấy tickets có **Release date** = ngày target release
    - **Exact match**: `Release date: YYYY-MM-DD` (ví dụ: `Release date: 2025-08-05`)
@@ -37,7 +83,7 @@ STL-XXXX, Updated Time: YYYY-MM-DDTHH:mm:ss.sssZ, Ticket Type: [Type], Epic: [Ep
 4. **Loại bỏ duplicates**: Loại bỏ tickets trùng lặp (cùng ID)
 5. **Loại bỏ ticket types**: Spike, Subtask (trừ khi có impact lớn)
 
-### Bước 2: Nhóm theo Epic và chức năng
+### Bước 3: Nhóm theo Epic và chức năng
 Phân loại tickets theo 3 categories chính dựa vào **Ticket Type**:
 
 #### **メイン機能** (Main Features)
@@ -64,7 +110,7 @@ Phân loại tickets theo 3 categories chính dựa vào **Ticket Type**:
   - Ticket Type: Internal Bug, Bug Report
   - Tickets có prefix [FE], [BE] kèm bug description
 
-### Bước 3: Format output tiếng Nhật
+### Bước 4: Format output tiếng Nhật
 
 #### Structure:
 ```markdown
@@ -81,7 +127,7 @@ Phân loại tickets theo 3 categories chính dựa vào **Ticket Type**:
 *   [STL-XXXX](https://moneyforward.atlassian.net/browse/STL-XXXX) [Title in Japanese]
 ```
 
-### Bước 4: Nguyên tắc xử lý
+### Bước 5: Nguyên tắc xử lý
 
 #### Grouping Rules:
 1. **Ticket Type priority**: Phân loại chính dựa vào Ticket Type (Story/Epic → メイン機能, Technical improvement → 改善, Bug/Internal Bug → 不具合)
@@ -122,7 +168,7 @@ Phân loại tickets theo 3 categories chính dựa vào **Ticket Type**:
 #### Link formatting:
 - Tất cả ticket ID phải có link: `[STL-XXXX](https://moneyforward.atlassian.net/browse/STL-XXXX)`
 
-### Bước 5: Validation và Output
+### Bước 6: Validation và Output
 
 #### File output:
 - **Japanese version**: `output/release-notes-YYYY-MM-DD-japanese.md`
@@ -140,8 +186,11 @@ Phân loại tickets theo 3 categories chính dựa vào **Ticket Type**:
 ## Ví dụ xử lý thực tế
 
 ### Bước tìm kiếm dữ liệu:
-**Command:** `grep "2025-08-05" data/raw/Release\ announcement\ .md`
-**Kết quả:** Tìm thấy 7 tickets có release date 2025-08-05
+**Command:** `grep "2025-08-05" data/processed/*.md`
+**Kết quả:** Tìm thấy tickets có release date 2025-08-05 trong:
+- `release-data-2025-07-and-2025-08.md`: 7 tickets
+- `release-data-2025-08-and-2025-09.md`: 7 tickets (duplicates)
+**Tổng cộng:** 7 unique tickets sau khi loại bỏ duplicates
 
 ### Input (Release date: 2025-08-05):
 ```
@@ -180,22 +229,52 @@ STL-6962, Updated Time: 2025-07-30T12:57:26.817+0900, Ticket Type: Bug Report, E
 - **Terminology Dictionary**: **BẮT BUỘC** sử dụng `instructions/terms.md` cho consistency
 
 ## Quy trình thực hiện
-1. **Tìm kiếm data**: Sử dụng grep search để tìm tickets theo release date
-2. **Phân tích data**: Đọc và parse raw data file cho các tickets tìm thấy
-3. **Chọn target date**: Xác định ngày release cần xử lý
-4. **Lọc và deduplicate**: Áp dụng filter rules
-5. **Phân loại**: Group theo メイン機能/改善/不具合
-6. **Dịch và format**: Tạo release notes hoàn toàn bằng tiếng Nhật sử dụng terms.md dictionary
-7. **Validation**: Kiểm tra quality và terminology consistency cuối cùng
+1. **Cập nhật data**: Clear processed folder và chạy script chia file từ raw data mới nhất
+2. **⚠️ Tìm kiếm data TOÀN DIỆN**: 
+   - **BẮT BUỘC**: Sử dụng `grep "YYYY-MM-DD" data/processed/*.md` để tìm trong TẤT CẢ files
+   - **KHÔNG** chỉ tìm trong file theo tháng release
+   - Kiểm tra tất cả files có chứa ngày release đó
+3. **Phân tích data từ TẤT CẢ files**: Đọc và parse data từ tất cả files có chứa tickets của ngày release
+4. **Chọn target date**: Xác định ngày release cần xử lý
+5. **⚠️ Lọc và deduplicate**: 
+   - Loại bỏ duplicates dựa trên STL-ID
+   - Sử dụng version mới nhất (Updated Time) của mỗi ticket
+   - Áp dụng filter rules khác
+6. **Phân loại**: Group theo メイン機能/改善/不具合
+7. **Dịch và format**: Tạo release notes hoàn toàn bằng tiếng Nhật sử dụng terms.md dictionary
+8. **Validation**: Kiểm tra quality và terminology consistency cuối cùng
 
 ## Troubleshooting: Khi không tìm thấy dữ liệu
 
 **Nếu không tìm thấy tickets cho ngày được yêu cầu:**
-1. **Kiểm tra format ngày**: Đảm bảo format YYYY-MM-DD đúng
-2. **Tìm ngày gần nhất**: Sử dụng grep để tìm các ngày có sẵn
-   - `grep "2025-MM-" data/raw/Release\ announcement\ .md` để tìm tháng
-   - `grep "Release date:" data/raw/Release\ announcement\ .md | head -20` để xem các ngày có sẵn
-3. **Tạo file empty**: Nếu thực sự không có data, tạo file thông báo không có release trong ngày đó
-4. **Đề xuất alternatives**: Liệt kê các ngày release khác có sẵn trong dữ liệu
+1. **Kiểm tra đã chạy script chưa**: Đảm bảo đã thực hiện Bước 0 - clear và chạy script chia file
+2. **Kiểm tra format ngày**: Đảm bảo format YYYY-MM-DD đúng
+3. **⚠️ QUAN TRỌNG - Tìm kiếm toàn bộ processed files**: 
+   ```bash
+   # Tìm kiếm toàn diện - LUÔN làm bước này
+   grep "YYYY-MM-DD" data/processed/*.md
+   grep "Release date.*YYYY-MM-DD" data/processed/*.md
+   
+   # Kiểm tra files nào chứa ngày này
+   grep -l "YYYY-MM-DD" data/processed/*.md
+   ```
+4. **Tìm ngày gần nhất**: Sử dụng grep để tìm các ngày có sẵn
+   - `grep "2025-MM-" data/processed/*.md` để tìm tháng
+   - `grep "Release date:" data/processed/*.md | head -20` để xem các ngày có sẵn
+5. **Backup search trên raw file**: Nếu cần thiết, search trên file raw gốc
+   - `grep "2025-MM-" data/raw/Release\ announcement\ .md`
+6. **Tạo file empty**: Nếu thực sự không có data, tạo file thông báo không có release trong ngày đó
+7. **Đề xuất alternatives**: Liệt kê các ngày release khác có sẵn trong dữ liệu
+
+## ⚠️ LỰU Ý QUAN TRỌNG VỀ TÌM KIẾM DỮ LIỆU
+
+**Logic chia file và duplicate data:**
+- Do script chia dữ liệu theo 2 tháng liên tiếp, cùng một ticket có thể xuất hiện trong NHIỀU files
+- Ví dụ thực tế: Ticket có `Release date: 2025-08-05` xuất hiện trong:
+  - `release-data-2025-07-and-2025-08.md` (15 occurrences)
+  - `release-data-2025-08-and-2025-09.md` (15 occurrences)
+- **BẮT BUỘC**: Luôn tìm kiếm trong TẤT CẢ files processed (`data/processed/*.md`)
+- **BẮT BUỘC**: Loại bỏ duplicates dựa trên STL-ID khi xử lý
+- **BẮT BUỘC**: Sử dụng version mới nhất của ticket (dựa vào Updated Time)
 
 Hãy xử lý dữ liệu cẩn thận và tạo ra release announcement tiếng Nhật chất lượng cao theo đúng format template với thuật ngữ chuẩn từ terms.md. 
