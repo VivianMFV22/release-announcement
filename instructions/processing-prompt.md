@@ -11,7 +11,7 @@ STL-XXXX, Updated Time: YYYY-MM-DDTHH:mm:ss.sssZ, Ticket Type: [Type], Epic: [Ep
 
 ### Các trường quan trọng:
 - **Ticket ID**: STL-XXXX (dạng STL-6728)
-- **Ticket Type**: Story, Technical improvement, Internal Bug, Task, Subtask, Spike, Epic, Bug Report
+- **Ticket Type**: Story, Technical improvement, Internal Bug (LOẠI BỎ), Task, Subtask (LOẠI BỎ), Spike (LOẠI BỎ), Epic, Bug Report
 - **Epic**: Tên Epic (có thể có emoji prefix như ⭐️, ☀️, 🌙)
 - **Title**: Mô tả chức năng/task
 - **Release date**: Ngày release (có thể có multiple dates separated by comma)
@@ -34,12 +34,14 @@ STL-XXXX, Updated Time: YYYY-MM-DDTHH:mm:ss.sssZ, Ticket Type: [Type], Epic: [Ep
 3. **Xác nhận kết quả**: Kiểm tra các file đã được tạo trong `data/processed/` với format:
    - `release-data-YYYY-MM-and-YYYY-MM.md`
    - Mỗi file chứa dữ liệu của 2 tháng liên tiếp
-   - Tổng cộng sẽ có khoảng 10 files với 876+ tickets
+   - **Filtering mới**: Chỉ tickets có release date từ hiện tại đến 2 tháng tương lai
+   - Tổng cộng sẽ có khoảng 2-3 files với ~123 tickets (đã filter)
 
-**Lợi ích của việc chia file:**
+**Lợi ích của việc chia file với filtering:**
+- **Hiệu quả cao**: Giảm 92% data không cần thiết (1604 → ~123 tickets)
+- **Relevant data**: Chỉ xử lý tickets có release date sắp tới
 - Tăng tốc độ xử lý khi tìm kiếm dữ liệu theo ngày cụ thể
 - Dễ quản lý và navigation dữ liệu theo giai đoạn
-- Giảm thời gian load khi đọc file lớn
 - Data luôn được cập nhật từ source mới nhất
 
 ### Bước 1: Tìm kiếm dữ liệu theo Release date
@@ -81,7 +83,7 @@ STL-XXXX, Updated Time: YYYY-MM-DDTHH:mm:ss.sssZ, Ticket Type: [Type], Epic: [Ep
    - **Tìm kiếm pattern**: Sử dụng grep search với pattern `Release date.*YYYY-MM-DD` hoặc `YYYY-MM-DD` để tìm tất cả references
 3. **Handle multiple dates**: Nếu ticket có nhiều release dates (comma separated), xem xét từng date
 4. **Loại bỏ duplicates**: Loại bỏ tickets trùng lặp (cùng ID)
-5. **Loại bỏ ticket types**: Spike, Subtask (trừ khi có impact lớn)
+5. **Loại bỏ ticket types**: Spike, Subtask, Internal Bug (trừ khi có impact lớn)
 
 ### Bước 3: Nhóm theo Epic và chức năng
 Phân loại tickets theo 3 categories chính dựa vào **Ticket Type**:
@@ -107,8 +109,8 @@ Phân loại tickets theo 3 categories chính dựa vào **Ticket Type**:
 
 #### **不具合** (Bug Fixes)
 - **Criteria**:
-  - Ticket Type: Internal Bug, Bug Report
-  - Tickets có prefix [FE], [BE] kèm bug description
+  - Ticket Type: Bug Report (KHÔNG bao gồm Internal Bug)
+  - Tất cả tickets Bug Report đều được bao gồm (không cần prefix [FE], [BE])
 
 ### Bước 4: Format output tiếng Nhật
 
@@ -130,7 +132,7 @@ Phân loại tickets theo 3 categories chính dựa vào **Ticket Type**:
 ### Bước 5: Nguyên tắc xử lý
 
 #### Grouping Rules:
-1. **Ticket Type priority**: Phân loại chính dựa vào Ticket Type (Story/Epic → メイン機能, Technical improvement → 改善, Bug/Internal Bug → 不具合)
+1. **Ticket Type priority**: Phân loại chính dựa vào Ticket Type (Story/Epic → メイン機能, Technical improvement → 改善, Bug Report → 不具合, Internal Bug → LOẠI BỎ)
 2. **Epic grouping**: Tickets cùng Epic name được nhóm lại trong cùng category
 3. **Deduplication**: Loại bỏ tickets trùng lặp (cùng STL-ID)
 4. **Ordering**: Sắp xếp tickets theo STL-ID tăng dần trong mỗi nhóm
@@ -198,6 +200,7 @@ STL-6267, Updated Time: 2025-07-21T10:17:33.050+0900, Ticket Type: Story, Epic: 
 STL-6272, Updated Time: 2025-07-21T10:17:32.863+0900, Ticket Type: Story, Epic: ⭐️Multiple currencies, Title: [Template flow] As an applicant, I can apply contract with Contract amount including currency, Release date: 2025-08-26,2025-08-05
 STL-6373, Updated Time: 2025-07-30T11:44:50.843+0900, Ticket Type: Technical improvement, Epic: , Title: [BE] Improve IP Restriction flow to take advantage the new response after creating the new record from Navis side, Release date: 2025-08-05
 STL-6962, Updated Time: 2025-07-30T12:57:26.817+0900, Ticket Type: Bug Report, Epic: , Title: [BE] missing NavisOfficeID for specific user on PROD, Release date: 2025-08-05
+STL-6999, Updated Time: 2025-07-30T12:57:26.817+0900, Ticket Type: Internal Bug, Epic: , Title: [Internal] Fix memory leak in background process, Release date: 2025-08-05 (LOẠI BỎ - không hiển thị trong announcement)
 ```
 
 ### Output (Japanese):
@@ -224,6 +227,7 @@ STL-6962, Updated Time: 2025-07-30T12:57:26.817+0900, Ticket Type: Bug Report, E
 - **Duplicate handling**: Cùng STL-ID chỉ xuất hiện 1 lần
 - **Multiple dates**: Xử lý tickets có nhiều release dates
 - **Empty sections**: Không hiển thị section nếu không có tickets
+- **⚠️ Internal Bug Filter**: **BẮT BUỘC** loại bỏ tất cả tickets có type "Internal Bug" khỏi announcement
 - **Japanese quality**: Dịch thuật tự nhiên, dùng thuật ngữ chuyên ngành chính xác
 - **Complete Japanese**: Tất cả content phải được dịch sang tiếng Nhật
 - **Terminology Dictionary**: **BẮT BUỘC** sử dụng `instructions/terms.md` cho consistency
@@ -239,7 +243,8 @@ STL-6962, Updated Time: 2025-07-30T12:57:26.817+0900, Ticket Type: Bug Report, E
 5. **⚠️ Lọc và deduplicate**: 
    - Loại bỏ duplicates dựa trên STL-ID
    - Sử dụng version mới nhất (Updated Time) của mỗi ticket
-   - Áp dụng filter rules khác
+   - **LOẠI BỎ Internal Bug**: Không bao gồm tickets có type "Internal Bug" trong announcement
+   - Áp dụng filter rules khác (Spike, Subtask)
 6. **Phân loại**: Group theo メイン機能/改善/不具合
 7. **Dịch và format**: Tạo release notes hoàn toàn bằng tiếng Nhật sử dụng terms.md dictionary
 8. **Validation**: Kiểm tra quality và terminology consistency cuối cùng
@@ -269,6 +274,7 @@ STL-6962, Updated Time: 2025-07-30T12:57:26.817+0900, Ticket Type: Bug Report, E
 ## ⚠️ LỰU Ý QUAN TRỌNG VỀ TÌM KIẾM DỮ LIỆU
 
 **Logic chia file và duplicate data:**
+- **Filtering mới**: Script tự động chỉ lấy tickets có release date từ hiện tại đến 2 tháng tương lai
 - Do script chia dữ liệu theo 2 tháng liên tiếp, cùng một ticket có thể xuất hiện trong NHIỀU files
 - Ví dụ thực tế: Ticket có `Release date: 2025-08-05` xuất hiện trong:
   - `release-data-2025-07-and-2025-08.md` (15 occurrences)

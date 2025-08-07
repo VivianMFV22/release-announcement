@@ -30,14 +30,18 @@ release-announcement/
 - Đặt file dữ liệu Jira thô vào thư mục `data/raw/`
 - Format: `STL-XXXX, Updated Time: ..., Ticket Type: ..., Epic: ..., Title: ..., Release date: YYYY-MM-DD`
 
-### 2. Chia nhỏ dữ liệu (Tùy chọn)
+### 2. Chia nhỏ dữ liệu với filtering (Tùy chọn)
 - Chạy script `python3 scripts/split_data_by_month.py` để chia file raw thành các file nhỏ
+- **Logic filtering**: 
+  - **Release Date**: Chỉ lấy tickets có release date từ hiện tại đến 2 tháng trong tương lai
 - **Logic chia file**: Mỗi file chứa dữ liệu của 2 tháng liên tiếp
-  - File `release-data-2025-05-and-2025-06.md` → chứa data tháng 5 + tháng 6
-  - File `release-data-2025-06-and-2025-07.md` → chứa data tháng 6 + tháng 7
   - File `release-data-2025-07-and-2025-08.md` → chứa data tháng 7 + tháng 8
-- **Kết quả**: 876 tickets → 10 files, tên file sử dụng format số tháng đơn giản
-- **Lợi ích**: Tăng tốc độ xử lý, dễ quản lý dữ liệu theo giai đoạn
+  - File `release-data-2025-08-and-2025-09.md` → chứa data tháng 8 + tháng 9
+- **Kết quả**: 1604 tickets → ~123 filtered tickets, chỉ tạo 2-3 files relevant
+- **Lợi ích**: 
+  - Tăng tốc độ xử lý đáng kể (giảm 92%+ data không cần thiết)
+  - Chỉ xử lý tickets có release date sắp tới
+  - Dễ quản lý dữ liệu theo giai đoạn
 
 ### 3. Xử lý với AI
 - Đọc hướng dẫn trong `instructions/processing-prompt.md`
@@ -59,9 +63,10 @@ release-announcement/
 
 ### ✅ Tự động hóa
 - Không cần code, chỉ cần AI assistant  
+- **Filtering thông minh**: Tự động lọc tickets theo release date (2 tháng tương lai)
 - Xử lý dữ liệu thô trực tiếp hoặc từ file đã chia nhỏ
 - Tự động phân loại và nhóm tickets
-- Script tự động chia file theo tháng (876 tickets → 10 files)
+- Script tự động chia file theo tháng với filtering (1604 → ~123 tickets relevant)
 
 ### ✅ Format tiếng Nhật chuẩn
 - **Thuật ngữ consistency**: Sử dụng dictionary từ `terms.md`
@@ -71,8 +76,10 @@ release-announcement/
 
 ### ✅ Phân loại thông minh
 - **メイン機能**: Ticket Type: Story, Epic (có Epic name)
+  - Format: **【Epic Name】（一般公開する予定日：未定）**
+  - Bao gồm thông tin hạn chế môi trường (STG/PROD) khi có
 - **改善**: Ticket Type: Technical improvement
-- **不具合**: Ticket Type: Bug Report, Internal Bug
+- **不具合**: Ticket Type: Bug Report (chỉ Bug Report, KHÔNG bao gồm Internal Bug)
 
 ## Thuật ngữ chuẩn
 
@@ -89,25 +96,43 @@ File `instructions/terms.md` chứa dictionary mapping:
 ## Ví dụ Output
 
 ```markdown
-### 2025年8月5日 リリースノート
+### 2025年7月22日 リリースノート
 
 **メイン機能**
-*   **⭐️通貨対応**
-    *   [STL-6267](https://moneyforward.atlassian.net/browse/STL-6267) 全権限として契約テンプレートに通貨フィールドを設定できる
-    *   [STL-6272](https://moneyforward.atlassian.net/browse/STL-6272) 申請者として通貨を含む契約金額で契約を申請できる
+*   **【複数通貨】（一般公開する予定日：未定）**
+    > 一般公開まで以下の事業者で制限
+    > - STG: Stampless with Biz - 事業者番号：8297-0083　
+    > - PROD: Stampless 6789 事業者番号：6033-6255
+
+    *   [STL-6363](https://moneyforward.atlassian.net/browse/STL-6363) ユーザーとして、締結済み契約リストで通貨による並べ替えが可能
+    *   [STL-6266](https://moneyforward.atlassian.net/browse/STL-6266) [通常フロー] 申請者として、通貨を含む契約を申請できます
+
+*   **【Slack通知（法務チェック）】（一般公開する予定日：未定）**
+    > 一般公開まで以下の事業者で制限
+    > - STG: Stampless with Biz - 事業者番号：8297-0083　
+    > - PROD: Stampless 6789 事業者番号：6033-6255
+
+    *   [STL-6522](https://moneyforward.atlassian.net/browse/STL-6522) [FE] (React移行) Cloud Contractユーザーとして、新しい通知設定ページを見ることができます
+    *   [STL-6759](https://moneyforward.atlassian.net/browse/STL-6759) Slack通知ユーザーとして、Cloud ContractとのSlackアカウントのリンクを解除できます
 
 **改善**
-*   [STL-6373](https://moneyforward.atlassian.net/browse/STL-6373) 管理コンソールとの連携フローの改善
+*   [STL-6521](https://moneyforward.atlassian.net/browse/STL-6521) [BE] LightPDFの使用にフィーチャーフラグを使用
+*   [STL-6712](https://moneyforward.atlassian.net/browse/STL-6712) [Improvement][BE][DocumentType,StampType,CustomFields] ユーザーはリストの上部から最新の項目を見ることができます
 
 **不具合**
-*   [STL-6962](https://moneyforward.atlassian.net/browse/STL-6962) PROD上のNavisOfficeID不足の修正
+*   [STL-6863](https://moneyforward.atlassian.net/browse/STL-6863) 締結証明書PDFで簡体字中国語のフォントが表示されます
+*   [STL-6900](https://moneyforward.atlassian.net/browse/STL-6900) [BE]ユーザーグループに基づいて権限が設定されている場合、支払側は契約を表示できません
 ```
 
 ## Lưu ý
 - **Terminology Priority**: Luôn kiểm tra `terms.md` trước khi dịch
 - Tất cả content được dịch hoàn toàn sang tiếng Nhật
-- Giữ nguyên emoji trong Epic names (nếu có)
+- **Format mới cho メイン機能**:
+  - Sử dụng 【】thay vì ⭐️ emoji
+  - Thêm thông tin ngày release: （一般公開する予定日：未定）
+  - Bao gồm thông tin hạn chế môi trường khi có
 - Phân loại dựa vào Ticket Type, không phụ thuộc emoji
 - Links sử dụng domain moneyforward.atlassian.net
 - Tự động loại bỏ duplicates và tickets không liên quan
+- **Loại bỏ Internal Bug**: Không liệt kê tickets có type "Internal Bug" trong announcement
 - **Consistency**: Đảm bảo sử dụng thuật ngữ chuẩn từ dictionary 

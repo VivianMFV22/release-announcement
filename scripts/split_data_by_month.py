@@ -1,13 +1,23 @@
 #!/usr/bin/env python3
 """
 Script để chia file raw data thành nhiều file nhỏ theo tháng.
-Mỗi file sẽ chứa data của 2 tháng liên tiếp.
+Chỉ lấy tickets có Release date trong khoảng thời gian từ hiện tại đến 2 tháng trong tương lai.
 """
 
 import re
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta
+
+def extract_updated_time(line):
+    """Extract updated time from a line."""
+    # Pattern to match: Updated Time: 2025-07-21T10:17:33.050+0900
+    pattern = r'Updated Time:\s*(\d{4}-\d{2}-\d{2})T'
+    match = re.search(pattern, line)
+    
+    if match:
+        return match.group(1)
+    return None
 
 def extract_release_dates(line):
     """Extract all release dates from a line."""
@@ -26,6 +36,29 @@ def extract_release_dates(line):
     
     return dates
 
+def is_within_date_range(date_str, start_date, end_date):
+    """Check if a date string is within the specified range."""
+    try:
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+        return start_date <= date_obj <= end_date
+    except:
+        return False
+
+def should_include_ticket(line, future_cutoff_date):
+    """Check if ticket should be included based on release dates only."""
+    # Check release dates (from now to 2 months in the future)
+    release_dates = extract_release_dates(line)
+    if not release_dates:
+        return False
+    
+    # At least one release date must be within the next 2 months from now
+    now = datetime.now()
+    for date_str in release_dates:
+        if is_within_date_range(date_str, now, future_cutoff_date):
+            return True
+    
+    return False
+
 def get_month_year(date_str):
     """Get month and year from date string."""
     try:
@@ -39,19 +72,29 @@ def get_month_number(month):
     return f"{month:02d}"
 
 def main():
-    input_file = "data/raw/Release announcement .md"
+    input_file = "data/raw/release-announcement.md"
     output_dir = "data/processed"
     
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
+    # Calculate date range for release date filtering
+    now = datetime.now()
+    # Next 2 months for release date filtering
+    future_cutoff_date = now + timedelta(days=60)  # Approximately 2 months
+    
+    print("🔍 Đang phân tích file raw data...")
+    print(f"📅 Filtering criteria:")
+    print(f"   - Release Date: từ {now.strftime('%Y-%m-%d')} đến {future_cutoff_date.strftime('%Y-%m-%d')}")
+    
     # Dictionary to store lines by month pairs
     month_data = defaultdict(list)
     
-    print("🔍 Đang phân tích file raw data...")
-    
     with open(input_file, 'r', encoding='utf-8') as f:
         lines = f.readlines()
+    
+    total_lines = 0
+    filtered_lines = 0
     
     # Process each line
     for line_num, line in enumerate(lines, 1):
@@ -59,6 +102,14 @@ def main():
         if not line:
             continue
             
+        total_lines += 1
+        
+        # Check if ticket should be included based on release date filtering
+        if not should_include_ticket(line, future_cutoff_date):
+            continue
+        
+        filtered_lines += 1
+        
         # Extract release dates from this line
         release_dates = extract_release_dates(line)
         
@@ -80,11 +131,13 @@ def main():
                         prev_key = f"{year-1}-12"
                         month_data[prev_key].append(line)
     
+    print(f"📊 Filtered {filtered_lines} tickets out of {total_lines} total lines")
+    
     # Remove duplicate lines in each month file
     for key in month_data:
         month_data[key] = list(set(month_data[key]))
     
-    print(f"📊 Tìm thấy dữ liệu cho {len(month_data)} nhóm tháng")
+    print(f"📊 Tìm thấy dữ liệu cho {len(month_data)} nhóm tháng (sau khi filter)")
     
     # Write files for each month
     for month_key in sorted(month_data.keys()):
@@ -108,6 +161,7 @@ def main():
         # Write file
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(f"# Release Data - Month {month}/{year} and Month {next_month}/{next_year}\n")
+            f.write(f"# Filtered data: Release Date từ hiện tại đến 2 tháng trong tương lai\n")
             f.write(f"# Total: {len(month_data[month_key])} tickets\n\n")
             
             for line in sorted(month_data[month_key]):
@@ -118,7 +172,7 @@ def main():
     print(f"\n🎉 Completed! Created {len(month_data)} files in {output_dir}/")
     
     # Show summary
-    print("\n📋 Summary:")
+    print("\n📋 Summary (Filtered Data):")
     total_tickets = 0
     for month_key in sorted(month_data.keys()):
         year, month = month_key.split('-')
@@ -126,7 +180,8 @@ def main():
         total_tickets += count
         print(f"   - Month {month}/{year}: {count} tickets")
     
-    print(f"\nTotal tickets processed: {total_tickets}")
+    print(f"\nTotal filtered tickets processed: {total_tickets}")
+    print(f"Original total lines: {total_lines} -> Filtered to: {filtered_lines} tickets")
 
 if __name__ == "__main__":
     main() 

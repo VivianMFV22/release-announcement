@@ -1,9 +1,0 @@
-# Release Data - Month 1/2025 and Month 2/2025
-# Total: 6 tickets
-
-STL-5839, Updated Time: 2025-07-29T17:35:36.262+0900, Ticket Type: Bug Report, Epic:  ⭐️債務支払マスター参照 2nd リリース/Reference to MFC Payable Master data 2nd release, Title: \[BE\] MFC Payable \- When pressing "Next" in Applying Contract Step 1, "400 Bad Request" error is displayed, preventing the application from proceeding when the MFC Payable data cache refreshes every 5 minutes, Release date: 2025-02-04
-STL-5865, Updated Time: 2025-07-29T17:29:52.062+0900, Ticket Type: Bug Report, Epic:  Migrate to Service Platform, Title: Applying Contract \- Step 1 \- PDF UPLOAD Method \- When the Word file is converted into PDF and uploaded to Apply contract 403 error displayed, Release date: 2025-02-04
-STL-5865, Updated Time: 2025-07-29T17:59:02.947+0900, Ticket Type: Bug Report, Epic:  Migrate to Service Platform, Title: Applying Contract \- Step 1 \- PDF UPLOAD Method \- When the Word file is converted into PDF and uploaded to Apply contract 403 error displayed, Release date: 2025-02-04
-STL-5867, Updated Time: 2025-07-29T17:22:59.382+0900, Ticket Type: Bug Report, Epic:  ⭐️一括アップロード/Batch upload of PDF files for imported concluded contracts, Title: \[BE\]\[Batch PDF upload\] \- Failed to Upload the Contracts and「この契約書はすでに登録済みのため、再度登録されませんでした」error message when trying to upload the Contracts without matching “contract name” or “hash value”, Release date: 2025-03-04,2025-02-18
-STL-5990, Updated Time: 2025-07-29T17:21:55.823+0900, Ticket Type: Bug Report, Epic:  Migrate to Service Platform, Title: \[Service Platform\] Legal Check \- Getting loading screen when Apply the contract from proposal, Release date: 2025-02-18
-STL-5990, Updated Time: 2025-07-29T17:51:17.841+0900, Ticket Type: Bug Report, Epic:  Migrate to Service Platform, Title: \[Service Platform\] Legal Check \- Getting loading screen when Apply the contract from proposal, Release date: 2025-02-18

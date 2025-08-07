@@ -8,6 +8,8 @@ webプラン Web Plan
 
 案件管理オプション Legal check option
 
+法務案件 Legal check
+
 Slack連携 Slack integration
 
 マネーフォワード クラウドBox（証憑データ連携） Box linkage
