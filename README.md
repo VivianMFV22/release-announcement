@@ -1,7 +1,7 @@
 # Release Announcement Generator
 
 ## Mô tả
-Tool tự động để tạo release announcement từ dữ liệu Jira thô sang format tiếng Nhật có cấu trúc với thuật ngữ chuẩn.
+Tool tự động để tạo release announcement từ dữ liệu Jira thô sang format tiếng Nhật có cấu trúc với thuật ngữ chuẩn. Hỗ trợ tạo release announcement từ nhiều project Jira (STL và SFM) đồng thời.
 
 ## Cấu trúc thư mục
 
@@ -27,8 +27,10 @@ release-announcement/
 ## Quy trình sử dụng
 
 ### 1. Chuẩn bị dữ liệu
+- **Multi-project support**: Lấy release version trên cả 2 project STL (Cloud Contract) và SFM (Stampless Frontend Migration)
 - Đặt file dữ liệu Jira thô vào thư mục `data/raw/`
 - Format: `STL-XXXX, Updated Time: ..., Ticket Type: ..., Epic: ..., Title: ..., Release date: YYYY-MM-DD`
+- **Jira MCP Integration**: Sử dụng Jira MCP để lấy thông tin release version và tickets từ cả STL và SFM projects
 
 ### 2. Chia nhỏ dữ liệu với filtering (Tùy chọn)
 - Chạy script `python3 scripts/split_data_by_month.py` để chia file raw thành các file nhỏ
@@ -49,11 +51,15 @@ release-announcement/
 - Yêu cầu AI xử lý dữ liệu theo ngày release cụ thể
 - **Nguồn dữ liệu**: Có thể sử dụng file raw gốc hoặc file đã chia nhỏ trong `data/processed/`
 - AI sẽ tự động:
-  - Lọc tickets theo ngày release
-  - Phân loại theo Ticket Type (Story/Epic → メイン機能, Technical improvement → 改善, Bug → 不具合)
+  - Lấy thông tin release version từ cả STL và SFM projects qua Jira MCP
+  - Lọc tickets theo ngày release và ticket type rules
+  - **Filtering rules mới**: 
+    - ✅ **Bao gồm**: Story, Bug Report, Technical improvement
+    - ❌ **Loại bỏ**: Internal Bug, Task (tất cả Task, không có ngoại lệ)
+  - Phân loại theo Ticket Type (Story/Epic → メイン機能, Technical improvement → 改善, Bug Report → 不具合)
   - Nhóm theo Epic name trong cùng category
-  - Dịch sang tiếng Nhật sử dụng thuật ngữ chuẩn
-  - Tạo file output có cấu trúc
+  - Dịch sang tiếng Nhật sử dụng thuật ngữ chuẩn từ file `terms.md`
+  - Tạo file output có cấu trúc cho multi-project
 
 ### 4. Kết quả
 - File release notes tiếng Nhật được tạo trong thư mục `output/`
@@ -74,12 +80,16 @@ release-announcement/
 - Cấu trúc markdown đúng format
 - Links đến Jira tickets
 
-### ✅ Phân loại thông minh
+### ✅ Phân loại thông minh với Multi-project support
+- **Multi-project data**: Tự động merge data từ STL và SFM projects
+- **Filtering rules được cập nhật**: 
+  - ✅ **Bao gồm**: Story, Bug Report, Technical improvement
+  - ❌ **Loại bỏ**: Internal Bug, Task (tất cả Task, không có ngoại lệ)
 - **メイン機能**: Ticket Type: Story, Epic (có Epic name)
   - Format: **【Epic Name】（一般公開する予定日：未定）**
-  - Bao gồm thông tin hạn chế môi trường (STG/PROD) khi có
+  - Bao gồm thông tin hạn chế môi trường (STG/PROD) theo template
 - **改善**: Ticket Type: Technical improvement
-- **不具合**: Ticket Type: Bug Report (chỉ Bug Report, KHÔNG bao gồm Internal Bug)
+- **不具合**: Ticket Type: Bug Report (chỉ Bug Report, KHÔNG bao gồm Internal Bug hoặc Task)
 
 ## Thuật ngữ chuẩn
 
@@ -125,14 +135,19 @@ File `instructions/terms.md` chứa dictionary mapping:
 ```
 
 ## Lưu ý
-- **Terminology Priority**: Luôn kiểm tra `terms.md` trước khi dịch
+- **Multi-project Integration**: Hỗ trợ lấy data từ cả STL và SFM projects qua Jira MCP
+- **Terminology Priority**: **BẮT BUỘC** kiểm tra `terms.md` trước khi dịch mọi thuật ngữ
 - Tất cả content được dịch hoàn toàn sang tiếng Nhật
-- **Format mới cho メイン機能**:
+- **Format chuẩn cho メイン機能**:
   - Sử dụng 【】thay vì ⭐️ emoji
   - Thêm thông tin ngày release: （一般公開する予定日：未定）
-  - Bao gồm thông tin hạn chế môi trường khi có
+  - **STG/PROD info theo template**: 
+    - STG: Stampless with Biz - 事業者番号：8297-0083
+    - PROD: Stampless 6789 事業者番号：6033-6255
+- **Filtering Rules mới (cập nhật)**:
+  - ✅ **Bao gồm**: Story, Bug Report, Technical improvement
+  - ❌ **Loại bỏ**: Internal Bug, Task (tất cả Task, không có ngoại lệ)
 - Phân loại dựa vào Ticket Type, không phụ thuộc emoji
 - Links sử dụng domain moneyforward.atlassian.net
 - Tự động loại bỏ duplicates và tickets không liên quan
-- **Loại bỏ Internal Bug**: Không liệt kê tickets có type "Internal Bug" trong announcement
-- **Consistency**: Đảm bảo sử dụng thuật ngữ chuẩn từ dictionary 
+- **Terminology Consistency**: **BẮT BUỘC** sử dụng thuật ngữ chuẩn từ `terms.md` dictionary

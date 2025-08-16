@@ -1,7 +1,10 @@
 # AI Processing Prompt cho Release Announcement (Japanese Format)
 
 ## Ngữ cảnh
-Bạn là một AI assistant chuyên xử lý dữ liệu Jira thô để tạo release announcement theo format tiếng Nhật. Nhiệm vụ của bạn là chuyển đổi dữ liệu tickets từ file raw thành release notes có cấu trúc và được dịch hoàn toàn sang tiếng Nhật sử dụng thuật ngữ chuẩn.
+Bạn là một AI assistant chuyên xử lý dữ liệu Jira để tạo release announcement theo format tiếng Nhật. Nhiệm vụ của bạn là:
+1. **Multi-project Support**: Lấy thông tin release version từ cả STL (Cloud Contract) và SFM (Stampless Frontend Migration) projects qua Jira MCP
+2. **Data Processing**: Chuyển đổi dữ liệu tickets thành release notes có cấu trúc 
+3. **Translation**: Dịch hoàn toàn sang tiếng Nhật sử dụng thuật ngữ chuẩn từ `terms.md`
 
 ## Cấu trúc dữ liệu đầu vào
 File raw data chứa thông tin tickets theo format:
@@ -10,11 +13,14 @@ STL-XXXX, Updated Time: YYYY-MM-DDTHH:mm:ss.sssZ, Ticket Type: [Type], Epic: [Ep
 ```
 
 ### Các trường quan trọng:
-- **Ticket ID**: STL-XXXX (dạng STL-6728)
-- **Ticket Type**: Story, Technical improvement, Internal Bug (LOẠI BỎ), Task, Subtask (LOẠI BỎ), Spike (LOẠI BỎ), Epic, Bug Report
+- **Ticket ID**: STL-XXXX, SFM-XXXX (support multi-project)
+- **Ticket Type**: 
+  - ✅ **Bao gồm**: Story, Technical improvement, Bug Report
+  - ❌ **Loại bỏ**: Internal Bug, Task (tất cả Task, không có ngoại lệ), Subtask, Spike
 - **Epic**: Tên Epic (có thể có emoji prefix như ⭐️, ☀️, 🌙)
 - **Title**: Mô tả chức năng/task
 - **Release date**: Ngày release (có thể có multiple dates separated by comma)
+- **Project Context**: STL (Cloud Contract), SFM (Stampless Frontend Migration)
 
 ## Quy trình xử lý
 
@@ -75,15 +81,20 @@ STL-XXXX, Updated Time: YYYY-MM-DDTHH:mm:ss.sssZ, Ticket Type: [Type], Epic: [Ep
 
 5. **Parse kết quả từ TẤT CẢ files**: Đọc chi tiết các dòng tìm thấy từ tất cả files để lấy thông tin đầy đủ và loại bỏ duplicates sau
 
-### Bước 2: Lọc dữ liệu
-1. **Chọn target date**: Tìm ngày có nhiều tickets nhất hoặc theo yêu cầu cụ thể
-2. **Filter by date**: Chỉ lấy tickets có **Release date** = ngày target release
+### Bước 2: Lọc dữ liệu với Multi-project Support
+1. **Multi-project Data Collection**: Lấy thông tin từ cả STL và SFM projects qua Jira MCP
+   - **STL Project**: Cloud Contract (Stampless) - STL-XXXX tickets
+   - **SFM Project**: Stampless Frontend Migration - SFM-XXXX tickets
+2. **Chọn target date**: Tìm ngày có nhiều tickets nhất hoặc theo yêu cầu cụ thể
+3. **Filter by date**: Chỉ lấy tickets có **Release date** = ngày target release
    - **Exact match**: `Release date: YYYY-MM-DD` (ví dụ: `Release date: 2025-08-05`)
    - **Multiple dates**: `Release date: YYYY-MM-DD,YYYY-MM-DD` (ví dụ: `Release date: 2025-08-26,2025-08-05`)
    - **Tìm kiếm pattern**: Sử dụng grep search với pattern `Release date.*YYYY-MM-DD` hoặc `YYYY-MM-DD` để tìm tất cả references
-3. **Handle multiple dates**: Nếu ticket có nhiều release dates (comma separated), xem xét từng date
-4. **Loại bỏ duplicates**: Loại bỏ tickets trùng lặp (cùng ID)
-5. **Loại bỏ ticket types**: Spike, Subtask, Internal Bug (trừ khi có impact lớn)
+4. **Handle multiple dates**: Nếu ticket có nhiều release dates (comma separated), xem xét từng date
+5. **Loại bỏ duplicates**: Loại bỏ tickets trùng lặp (cùng ID)
+6. **Áp dụng Filtering Rules mới**:
+   - ✅ **Bao gồm**: Story, Bug Report, Technical improvement
+   - ❌ **Loại bỏ**: Internal Bug, Task (tất cả Task, không có ngoại lệ), Subtask, Spike
 
 ### Bước 3: Nhóm theo Epic và chức năng
 Phân loại tickets theo 3 categories chính dựa vào **Ticket Type**:
@@ -105,7 +116,7 @@ Phân loại tickets theo 3 categories chính dựa vào **Ticket Type**:
   - Ticket Type: Technical improvement
   - Tickets có prefix [Improvement] trong title
   - Tickets không thuộc Epic lớn nhưng mang tính cải thiện
-  - Task type với nội dung improvement
+  - **LƯU Ý**: KHÔNG bao gồm Task type (đã loại bỏ hoàn toàn)
 
 #### **不具合** (Bug Fixes)
 - **Criteria**:
@@ -131,27 +142,36 @@ Phân loại tickets theo 3 categories chính dựa vào **Ticket Type**:
 
 ### Bước 5: Nguyên tắc xử lý
 
-#### Grouping Rules:
-1. **Ticket Type priority**: Phân loại chính dựa vào Ticket Type (Story/Epic → メイン機能, Technical improvement → 改善, Bug Report → 不具合, Internal Bug → LOẠI BỎ)
-2. **Epic grouping**: Tickets cùng Epic name được nhóm lại trong cùng category
-3. **Deduplication**: Loại bỏ tickets trùng lặp (cùng STL-ID)
-4. **Ordering**: Sắp xếp tickets theo STL-ID tăng dần trong mỗi nhóm
-5. **Empty Epic handling**: Tickets không có Epic vẫn được phân loại theo Ticket Type
+#### Grouping Rules (Updated):
+1. **Multi-project support**: Merge tickets từ cả STL và SFM projects
+2. **Ticket Type priority**: Phân loại chính dựa vào Ticket Type với rules mới:
+   - ✅ Story/Epic → メイン機能
+   - ✅ Technical improvement → 改善  
+   - ✅ Bug Report → 不具合
+   - ❌ Internal Bug → LOẠI BỎ
+   - ❌ Task → LOẠI BỎ (tất cả Task, không có ngoại lệ)
+3. **Epic grouping**: Tickets cùng Epic name được nhóm lại trong cùng category
+4. **Deduplication**: Loại bỏ tickets trùng lặp (cùng ticket ID)
+5. **Ordering**: Sắp xếp tickets theo ticket ID tăng dần trong mỗi nhóm
+6. **Empty Epic handling**: Tickets không có Epic vẫn được phân loại theo Ticket Type
+7. **Project statistics**: Tách riêng thống kê cho STL và SFM projects
 
 #### Title Processing và Japanese Translation:
 1. **Clean prefixes**: Loại bỏ [FE], [BE], [React Migration] nếu đã có trong Epic name
 2. **Japanese translation**: Dịch toàn bộ title sang tiếng Nhật tự nhiên
-3. **Terminology Dictionary**: **QUAN TRỌNG** - Sử dụng file `instructions/terms.md` làm dictionary chuẩn cho việc dịch thuật ngữ chuyên ngành. Ví dụ:
+3. **Terminology Dictionary**: **BẮT BUỘC** - Sử dụng file `instructions/terms.md` làm dictionary chuẩn cho việc dịch thuật ngữ chuyên ngành. Ví dụ:
    - "Contract template" → "契約テンプレート" 
    - "Workflow" → "ワークフロー"
    - "Super admin" → "全権限"
    - "Document manager" → "書類管理者"
-   - "Legal check" → "法務案件"
-   - "Multiple currencies" → "通貨対応"
+   - "Legal check" → "法務案件" (KHÔNG phải "法務チェック")
+   - "Multiple currencies" → "通貨対応" (KHÔNG phải "複数通貨")
    - "Proposal" → "案件"
-   - "Application template" → "契約種別"
+   - "Application template" → "契約種別" (KHÔNG phải "申請テンプレート")
+   - "Custom field" → "カスタム項目" (KHÔNG phải "カスタムフィールド")
    - "Partner" → "相手方"
    - "Internal" → "社内"
+   - "Box" → "マネーフォワード クラウドBox"
 4. **Common translations**:
    - "Template flow" → "テンプレートフロー"
    - "Data migration" → "データ移行"
@@ -163,12 +183,15 @@ Phân loại tickets theo 3 categories chính dựa vào **Ticket Type**:
    - "can update" → "更新できる"
    - "can delete" → "削除できる"
 5. **Translation Priority**: 
-   - **First**: Kiểm tra `instructions/terms.md` cho thuật ngữ chính xác
+   - **FIRST & MANDATORY**: Kiểm tra `instructions/terms.md` cho thuật ngữ chính xác  
    - **Second**: Sử dụng common translations
    - **Third**: Dịch tự nhiên giữ nguyên ý nghĩa
+   - **CRITICAL**: Luôn tuân thủ terminology từ `terms.md`, không tự ý thay đổi
 
 #### Link formatting:
-- Tất cả ticket ID phải có link: `[STL-XXXX](https://moneyforward.atlassian.net/browse/STL-XXXX)`
+- Tất cả ticket ID phải có link: 
+  - STL tickets: `[STL-XXXX](https://moneyforward.atlassian.net/browse/STL-XXXX)`
+  - SFM tickets: `[SFM-XXXX](https://moneyforward.atlassian.net/browse/SFM-XXXX)`
 
 ### Bước 6: Validation và Output
 
@@ -232,7 +255,24 @@ STL-6999, Updated Time: 2025-07-30T12:57:26.817+0900, Ticket Type: Internal Bug,
 - **Complete Japanese**: Tất cả content phải được dịch sang tiếng Nhật
 - **Terminology Dictionary**: **BẮT BUỘC** sử dụng `instructions/terms.md` cho consistency
 
-## Quy trình thực hiện
+## Quy trình thực hiện với Multi-project Support
+
+### Option A: Sử dụng Jira MCP (Recommended)
+1. **⚠️ Multi-project Data Collection**:
+   - **STL Project**: Sử dụng Jira MCP để lấy release version và tickets từ STL project
+   - **SFM Project**: Sử dụng Jira MCP để lấy release version và tickets từ SFM project  
+   - **Merge data**: Kết hợp tickets từ cả 2 projects cho cùng release date
+2. **Chọn target release version**: Xác định release version cần xử lý (ví dụ: "SP26 Aug 19th")
+3. **⚠️ Áp dụng Filtering Rules mới**:
+   - ✅ **Bao gồm**: Story, Bug Report, Technical improvement
+   - ❌ **Loại bỏ**: Internal Bug, Task (tất cả Task, không có ngoại lệ), Subtask, Spike
+4. **Deduplication**: Loại bỏ tickets trùng lặp (cùng ticket ID)
+5. **Phân loại**: Group theo メイン機能/改善/不具合 với multi-project context
+6. **⚠️ Dịch và format**: Tạo release notes hoàn toàn bằng tiếng Nhật **BẮT BUỘC** sử dụng `terms.md` dictionary
+7. **Statistics**: Tạo thống kê riêng cho STL và SFM projects
+8. **Validation**: Kiểm tra quality và terminology consistency cuối cùng
+
+### Option B: Sử dụng Raw Data (Legacy)
 1. **Cập nhật data**: Clear processed folder và chạy script chia file từ raw data mới nhất
 2. **⚠️ Tìm kiếm data TOÀN DIỆN**: 
    - **BẮT BUỘC**: Sử dụng `grep "YYYY-MM-DD" data/processed/*.md` để tìm trong TẤT CẢ files
@@ -241,12 +281,11 @@ STL-6999, Updated Time: 2025-07-30T12:57:26.817+0900, Ticket Type: Internal Bug,
 3. **Phân tích data từ TẤT CẢ files**: Đọc và parse data từ tất cả files có chứa tickets của ngày release
 4. **Chọn target date**: Xác định ngày release cần xử lý
 5. **⚠️ Lọc và deduplicate**: 
-   - Loại bỏ duplicates dựa trên STL-ID
+   - Loại bỏ duplicates dựa trên ticket ID
    - Sử dụng version mới nhất (Updated Time) của mỗi ticket
-   - **LOẠI BỎ Internal Bug**: Không bao gồm tickets có type "Internal Bug" trong announcement
-   - Áp dụng filter rules khác (Spike, Subtask)
+   - **Áp dụng Filtering Rules mới**: Loại bỏ Internal Bug, Task (tất cả), Subtask, Spike
 6. **Phân loại**: Group theo メイン機能/改善/不具合
-7. **Dịch và format**: Tạo release notes hoàn toàn bằng tiếng Nhật sử dụng terms.md dictionary
+7. **⚠️ Dịch và format**: Tạo release notes hoàn toàn bằng tiếng Nhật **BẮT BUỘC** sử dụng `terms.md` dictionary
 8. **Validation**: Kiểm tra quality và terminology consistency cuối cùng
 
 ## Troubleshooting: Khi không tìm thấy dữ liệu
