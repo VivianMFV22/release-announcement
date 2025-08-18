@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Script để chia file raw data thành nhiều file nhỏ theo tháng.
-Chỉ lấy tickets có Release date trong khoảng thời gian từ hiện tại đến 2 tháng trong tương lai.
+Script to split raw data file into smaller files by month.
+Only takes tickets with Release date within the timeframe from now to 2 months in the future.
 """
 
 import re
@@ -83,9 +83,9 @@ def main():
     # Next 2 months for release date filtering
     future_cutoff_date = now + timedelta(days=60)  # Approximately 2 months
     
-    print("🔍 Đang phân tích file raw data...")
+    print("🔍 Analyzing raw data file...")
     print(f"📅 Filtering criteria:")
-    print(f"   - Release Date: từ {now.strftime('%Y-%m-%d')} đến {future_cutoff_date.strftime('%Y-%m-%d')}")
+    print(f"   - Release Date: from {now.strftime('%Y-%m-%d')} to {future_cutoff_date.strftime('%Y-%m-%d')}")
     
     # Dictionary to store lines by month pairs
     month_data = defaultdict(list)
@@ -137,7 +137,7 @@ def main():
     for key in month_data:
         month_data[key] = list(set(month_data[key]))
     
-    print(f"📊 Tìm thấy dữ liệu cho {len(month_data)} nhóm tháng (sau khi filter)")
+    print(f"📊 Found data for {len(month_data)} month groups (after filtering)")
     
     # Write files for each month
     for month_key in sorted(month_data.keys()):
@@ -161,7 +161,7 @@ def main():
         # Write file
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(f"# Release Data - Month {month}/{year} and Month {next_month}/{next_year}\n")
-            f.write(f"# Filtered data: Release Date từ hiện tại đến 2 tháng trong tương lai\n")
+            f.write(f"# Filtered data: Release Date from now to 2 months in the future\n")
             f.write(f"# Total: {len(month_data[month_key])} tickets\n\n")
             
             for line in sorted(month_data[month_key]):

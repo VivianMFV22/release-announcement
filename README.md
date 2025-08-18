@@ -1,101 +1,92 @@
 # Release Announcement Generator
 
-## Mô tả
-Tool tự động để tạo release announcement từ dữ liệu Jira thô sang format tiếng Nhật có cấu trúc với thuật ngữ chuẩn. Hỗ trợ tạo release announcement từ nhiều project Jira (STL và SFM) đồng thời.
+## Description
+Automated tool to generate Japanese release announcements from Jira data with structured formatting and standardized terminology. Supports creating release announcements from multiple Jira projects (STL and SFM) simultaneously.
 
-## Cấu trúc thư mục
+## Directory Structure
 
 ```
 release-announcement/
-├── data/
-│   ├── processed/           # Dữ liệu đã chia nhỏ theo tháng
-│   │   ├── release-data-YYYY-MM-and-YYYY-MM.md
-│   │   └── ... (10 files for different month pairs)
-│   └── raw/                # Dữ liệu Jira thô (gốc)
-│       └── Release announcement .md
+├── data/                        # Legacy data (not used in new workflow)
+│   ├── processed (not use)/     # Split data (not used)
+│   └── raw/                     # Raw Jira data (not used)
 ├── instructions/
-│   ├── processing-prompt.md # Hướng dẫn xử lý cho AI
-│   └── terms.md            # Dictionary thuật ngữ tiếng Nhật chuẩn
-├── output/                 # Release notes được tạo ra
-│   └── release-notes-YYYY-MM-DD-japanese.md
-├── scripts/                # Scripts quản lý dữ liệu
-│   └── split_data_by_month.py  # Script chia file raw theo tháng
-└── templates/
-    └── release-announcement-template.md
+│   ├── processing-prompt.md     # AI processing instructions
+│   └── terms.md                 # Standard Japanese terminology dictionary
+├── output/                      # Generated release notes
+│   └── release-announcement-YYYY-MM-DD-japanese.md
+├── scripts/                     # Legacy scripts (not used in new workflow)
+│   └── split_data_by_month(not_use).py
+├── templates/
+│   └── release-announcement-template.md
+└── README.md
 ```
 
-## Quy trình sử dụng
+## Usage Workflow
 
-### 1. Chuẩn bị dữ liệu
-- **Multi-project support**: Lấy release version trên cả 2 project STL (Cloud Contract) và SFM (Stampless Frontend Migration)
-- Đặt file dữ liệu Jira thô vào thư mục `data/raw/`
-- Format: `STL-XXXX, Updated Time: ..., Ticket Type: ..., Epic: ..., Title: ..., Release date: YYYY-MM-DD`
-- **Jira MCP Integration**: Sử dụng Jira MCP để lấy thông tin release version và tickets từ cả STL và SFM projects
+### 1. Preparation
+- **Multi-project support**: Access both STL (Cloud Contract) and SFM (Stampless Frontend Migration) projects via Jira MCP
+- **Jira MCP Integration**: Use Jira MCP to retrieve release version info and tickets directly from Jira API
+- **Real-time data**: No raw data files needed, everything retrieved from Jira API
 
-### 2. Chia nhỏ dữ liệu với filtering (Tùy chọn)
-- Chạy script `python3 scripts/split_data_by_month.py` để chia file raw thành các file nhỏ
-- **Logic filtering**: 
-  - **Release Date**: Chỉ lấy tickets có release date từ hiện tại đến 2 tháng trong tương lai
-- **Logic chia file**: Mỗi file chứa dữ liệu của 2 tháng liên tiếp
-  - File `release-data-2025-07-and-2025-08.md` → chứa data tháng 7 + tháng 8
-  - File `release-data-2025-08-and-2025-09.md` → chứa data tháng 8 + tháng 9
-- **Kết quả**: 1604 tickets → ~123 filtered tickets, chỉ tạo 2-3 files relevant
-- **Lợi ích**: 
-  - Tăng tốc độ xử lý đáng kể (giảm 92%+ data không cần thiết)
-  - Chỉ xử lý tickets có release date sắp tới
-  - Dễ quản lý dữ liệu theo giai đoạn
+### 2. AI Processing
+- Read instructions in `instructions/processing-prompt.md`
+- **Important**: AI will use `instructions/terms.md` as the standard dictionary
+- Request AI to process data for specific release date
+- **Data Source**: Use Jira MCP to access Jira data directly
+- AI will automatically:
+  - Retrieve release version info from both STL and SFM projects via Jira MCP
+  - Filter tickets by release version and ticket type rules
+  - **New filtering rules**: 
+    - ✅ **Include**: Story, Bug Report, Technical improvement
+    - ❌ **Exclude**: Internal Bug, Task (all Tasks, no exceptions)
+  - Categorize by Ticket Type (Story/Epic → メイン機能, Technical improvement → 改善, Bug Report → 不具合)
+  - Group by Epic name within same category
+  - Translate to Japanese using standard terminology from `terms.md` file
+  - Create structured output file for multi-project
 
-### 3. Xử lý với AI
-- Đọc hướng dẫn trong `instructions/processing-prompt.md`
-- **Quan trọng**: AI sẽ sử dụng `instructions/terms.md` làm dictionary chuẩn
-- Yêu cầu AI xử lý dữ liệu theo ngày release cụ thể
-- **Nguồn dữ liệu**: Có thể sử dụng file raw gốc hoặc file đã chia nhỏ trong `data/processed/`
-- AI sẽ tự động:
-  - Lấy thông tin release version từ cả STL và SFM projects qua Jira MCP
-  - Lọc tickets theo ngày release và ticket type rules
-  - **Filtering rules mới**: 
-    - ✅ **Bao gồm**: Story, Bug Report, Technical improvement
-    - ❌ **Loại bỏ**: Internal Bug, Task (tất cả Task, không có ngoại lệ)
-  - Phân loại theo Ticket Type (Story/Epic → メイン機能, Technical improvement → 改善, Bug Report → 不具合)
-  - Nhóm theo Epic name trong cùng category
-  - Dịch sang tiếng Nhật sử dụng thuật ngữ chuẩn từ file `terms.md`
-  - Tạo file output có cấu trúc cho multi-project
+### 3. Results
+- Japanese release notes file created in `output/` directory
+- Format: `release-announcement-YYYY-MM-DD-japanese.md`
 
-### 4. Kết quả
-- File release notes tiếng Nhật được tạo trong thư mục `output/`
-- Format: `release-notes-YYYY-MM-DD-japanese.md`
+## Features
 
-## Đặc điểm
+### ✅ Automation
+- No coding required, only AI assistant with Jira MCP
+- **Smart filtering**: Automatically filter tickets by release version
+- Direct Jira data access via MCP integration
+- Automatic ticket classification and grouping
+- Real-time data processing from Jira API
 
-### ✅ Tự động hóa
-- Không cần code, chỉ cần AI assistant  
-- **Filtering thông minh**: Tự động lọc tickets theo release date (2 tháng tương lai)
-- Xử lý dữ liệu thô trực tiếp hoặc từ file đã chia nhỏ
-- Tự động phân loại và nhóm tickets
-- Script tự động chia file theo tháng với filtering (1604 → ~123 tickets relevant)
+### ✅ Standard Japanese Format
+- **Terminology consistency**: Use dictionary from `terms.md`
+- Accurate translation of technical terminology
+- Proper markdown structure format
+- Links to Jira tickets
 
-### ✅ Format tiếng Nhật chuẩn
-- **Thuật ngữ consistency**: Sử dụng dictionary từ `terms.md`
-- Dịch thuật chính xác thuật ngữ chuyên ngành
-- Cấu trúc markdown đúng format
-- Links đến Jira tickets
-
-### ✅ Phân loại thông minh với Multi-project support
-- **Multi-project data**: Tự động merge data từ STL và SFM projects
-- **Filtering rules được cập nhật**: 
-  - ✅ **Bao gồm**: Story, Bug Report, Technical improvement
-  - ❌ **Loại bỏ**: Internal Bug, Task (tất cả Task, không có ngoại lệ)
-- **メイン機能**: Ticket Type: Story, Epic (có Epic name)
+### ✅ Smart Classification with Multi-project Support
+- **Multi-project data**: Automatically merge data from STL and SFM projects
+- **Updated filtering rules**: 
+  - ✅ **Include**: Story, Bug Report, Technical improvement
+  - ❌ **Exclude**: Internal Bug, Task (all Tasks, no exceptions)
+- **メイン機能**: Ticket Type: Story, Epic (with Epic name)
+  - **⚠️ CRITICAL Epic Grouping Rule**: Tickets with same Epic name MUST be grouped together under that Epic
   - Format: **【Epic Name】（一般公開する予定日：未定）**
-  - Bao gồm thông tin hạn chế môi trường (STG/PROD) theo template
-- **改善**: Ticket Type: Technical improvement
-- **不具合**: Ticket Type: Bug Report (chỉ Bug Report, KHÔNG bao gồm Internal Bug hoặc Task)
+  - Include environment restriction info (STG/PROD) per template
+  - **Epic sub-listing**: All tickets belonging to the same Epic are listed as sub-items under the Epic heading
+  - **NO individual listing**: Story/Epic tickets must NOT be listed individually in メイン機能 - they must be grouped by Epic
+  - **STL tickets without Epic**: Move to 改善 section
+  - **SFM tickets**: Group in separate "【React 移行】" section
+- **改善**: 
+  - Ticket Type: Technical improvement
+  - STL Story/Epic tickets without Epic
+- **不具合**: Ticket Type: Bug Report (Bug Report only, NOT including Internal Bug or Task)
 
-## Thuật ngữ chuẩn
+## Standard Terminology
 
-File `instructions/terms.md` chứa dictionary mapping:
-- **English → Japanese**: Thuật ngữ chuyên ngành Cloud Contract
-- **Standardization**: Đảm bảo consistency trong translation
+The `instructions/terms.md` file contains dictionary mapping:
+- **English → Japanese**: Cloud Contract technical terminology
+- **Standardization**: Ensure consistency in translation
 - **Examples**:
   - Contract template → 契約テンプレート
   - Workflow → ワークフロー
@@ -103,13 +94,13 @@ File `instructions/terms.md` chứa dictionary mapping:
   - Legal check → 法務案件
   - Multiple currencies → 通貨対応
 
-## Ví dụ Output
+## Output Example
 
 ```markdown
 ### 2025年7月22日 リリースノート
 
 **メイン機能**
-*   **【複数通貨】（一般公開する予定日：未定）**
+*   **【通貨対応】（一般公開する予定日：未定）**
     > 一般公開まで以下の事業者で制限
     > - STG: Stampless with Biz - 事業者番号：8297-0083　
     > - PROD: Stampless 6789 事業者番号：6033-6255
@@ -117,13 +108,15 @@ File `instructions/terms.md` chứa dictionary mapping:
     *   [STL-6363](https://moneyforward.atlassian.net/browse/STL-6363) ユーザーとして、締結済み契約リストで通貨による並べ替えが可能
     *   [STL-6266](https://moneyforward.atlassian.net/browse/STL-6266) [通常フロー] 申請者として、通貨を含む契約を申請できます
 
-*   **【Slack通知（法務チェック）】（一般公開する予定日：未定）**
+*   **【法務チェック用Slack通知】（一般公開する予定日：未定）**
     > 一般公開まで以下の事業者で制限
     > - STG: Stampless with Biz - 事業者番号：8297-0083　
     > - PROD: Stampless 6789 事業者番号：6033-6255
 
     *   [STL-6522](https://moneyforward.atlassian.net/browse/STL-6522) [FE] (React移行) Cloud Contractユーザーとして、新しい通知設定ページを見ることができます
     *   [STL-6759](https://moneyforward.atlassian.net/browse/STL-6759) Slack通知ユーザーとして、Cloud ContractとのSlackアカウントのリンクを解除できます
+
+> **Epic Grouping Example**: Notice how tickets with the same Epic are grouped together under the Epic heading, not listed individually
 
 **改善**
 *   [STL-6521](https://moneyforward.atlassian.net/browse/STL-6521) [BE] LightPDFの使用にフィーチャーフラグを使用
@@ -134,20 +127,30 @@ File `instructions/terms.md` chứa dictionary mapping:
 *   [STL-6900](https://moneyforward.atlassian.net/browse/STL-6900) [BE]ユーザーグループに基づいて権限が設定されている場合、支払側は契約を表示できません
 ```
 
-## Lưu ý
-- **Multi-project Integration**: Hỗ trợ lấy data từ cả STL và SFM projects qua Jira MCP
-- **Terminology Priority**: **BẮT BUỘC** kiểm tra `terms.md` trước khi dịch mọi thuật ngữ
-- Tất cả content được dịch hoàn toàn sang tiếng Nhật
-- **Format chuẩn cho メイン機能**:
-  - Sử dụng 【】thay vì ⭐️ emoji
-  - Thêm thông tin ngày release: （一般公開する予定日：未定）
-  - **STG/PROD info theo template**: 
-    - STG: Stampless with Biz - 事業者番号：8297-0083
-    - PROD: Stampless 6789 事業者番号：6033-6255
-- **Filtering Rules mới (cập nhật)**:
-  - ✅ **Bao gồm**: Story, Bug Report, Technical improvement
-  - ❌ **Loại bỏ**: Internal Bug, Task (tất cả Task, không có ngoại lệ)
-- Phân loại dựa vào Ticket Type, không phụ thuộc emoji
-- Links sử dụng domain moneyforward.atlassian.net
-- Tự động loại bỏ duplicates và tickets không liên quan
-- **Terminology Consistency**: **BẮT BUỘC** sử dụng thuật ngữ chuẩn từ `terms.md` dictionary
+## Important Notes
+- **Multi-project Integration**: Support data retrieval from both STL and SFM projects via Jira MCP
+- **Terminology Priority**: **MANDATORY** check `terms.md` before translating any terminology
+- All content must be completely translated to Japanese
+- **Standard format for メイン機能**:
+  - Use 【】instead of ⭐️ emoji
+  - Add release date info: （一般公開する予定日：未定）
+  - **STG/PROD info per template**: 
+    - **STL features**: 
+      - STG: Stampless with Biz - 事業者番号：8297-0083
+      - PROD: Stampless 6789 事業者番号：6033-6255
+    - **React 移行 (SFM features)**:
+      - STG: Migration R Co.Ltd (Middle plan) - 事業者番号：2966-8562
+      - PROD: ReactJS migration (Middle) - 事業者番号：8769-0293
+- **⚠️ CRITICAL - Fix Versions Validation Rule (New)**:
+  - **MANDATORY**: Check actual Fix Versions in Jira, NOT just based on release date in raw data
+  - **Reason**: Tickets may have multiple release dates due to quarterly versions (e.g., ☀️ Q3Y25) but only belong to 1 specific release version
+  - **Process**: Use Jira MCP to get Fix Versions of each ticket and only include tickets belonging to the exact requested release version
+  - **Example**: STL-6521 has release date "2025-08-19,2025-07-22" but Fix Versions = ["☀️ Q3Y25", "SP24 Jul 22th"] → NOT part of "SP26 Aug 19th"
+- **New Filtering Rules (Updated)**:
+  - ✅ **Include**: Story, Bug Report, Technical improvement
+  - ❌ **Exclude**: Internal Bug, Task (all Tasks, no exceptions)
+- Classification based on Ticket Type, not dependent on emoji
+- Links use moneyforward.atlassian.net domain
+- Automatically remove duplicates and irrelevant tickets
+- **Terminology Consistency**: **MANDATORY** use standard terminology from `terms.md` dictionary
+- **⚠️ Fix Versions Priority**: **MANDATORY** check actual Fix Versions instead of just relying on release dates to avoid including tickets already released in other versions
