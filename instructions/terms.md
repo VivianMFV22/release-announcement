@@ -4,6 +4,8 @@ midプラン Middle Plan
 
 webプラン Web Plan
 
+ひとり法人プラン　One-person corporation plan
+
 無料 Free Plan
 
 案件管理オプション Legal check option
@@ -239,3 +241,5 @@ AIリース識別　AI lease assessment
 債務支払　Payable
 
 法務案件 Legal check
+
+

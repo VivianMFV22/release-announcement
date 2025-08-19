@@ -34,6 +34,32 @@ release-announcement/
 - **Important**: AI will use `instructions/terms.md` as the standard dictionary
 - Request AI to process data for specific release date
 - **Data Source**: Use Jira MCP to access Jira data directly
+
+#### 🔧 **CRITICAL Jira MCP Tools Usage**
+**⚠️ To avoid getting stuck, use these EXACT tool names:**
+
+1. **List Release Versions**:
+   ```
+   mcp_jira-cloud_listProjectVersions
+   - projectKey: "STL" or "SFM"
+   - includeArchived: false
+   ```
+
+2. **Search Tickets by Fix Version**:
+   ```
+   mcp_jira-cloud_searchIssues
+   - projectKey: "STL" or "SFM"  
+   - jql: "fixVersion = \"SP26 Aug 19th\""
+   - maxResults: 100
+   - includeHierarchy: true
+   - includeProgress: true
+   ```
+
+**❌ NEVER use non-existent tools like:**
+- `mcp_jira-cloud_searchTickets`
+- `mcp_jira-cloud_getTickets`
+- Any tool not starting with `mcp_jira-cloud_`
+
 - AI will automatically:
   - Retrieve release version info from both STL and SFM projects via Jira MCP
   - Filter tickets by release version and ticket type rules
