@@ -68,8 +68,12 @@ You are an AI assistant specialized in processing Jira data to create Japanese-f
 
 ### Step 4: Translation and Output
 1. **Translate**: Use `instructions/terms.md` dictionary MANDATORY
-2. **Format**: Follow `templates/release-announcement-template.md` structure exactly
-3. **Output**: Save to `output/release-announcement-YYYY-MM-DD-japanese.md`
+2. **Epic Name Translation**: Translate Epic names to Japanese using `terms.md` dictionary
+   - Example: "Multiple currencies" → "通貨対応"
+   - Example: "React migration phase 3" → "React移行フェーズ3"
+   - Example: "Choose multiple authorizers" → "複数承認者選択"
+3. **Format**: Follow `templates/release-announcement-template.md` structure exactly
+4. **Output**: Save to `output/release-announcement-YYYY-MM-DD-japanese.md`
 
 ## ⚠️ CRITICAL - API Requirements
 
@@ -109,6 +113,7 @@ You are an AI assistant specialized in processing Jira data to create Japanese-f
 - ✅ **Epic information**: Retrieved via `parent` field
 - ✅ **Filtering rules**: Applied correctly (exclude Internal Bug, Task)
 - ✅ **Japanese translation**: Using `terms.md` dictionary
+- ✅ **Epic name translation**: Epic names translated to Japanese using `terms.md`
 - ✅ **Template format**: Followed exactly with environment restrictions
 - ✅ **Links**: All use moneyforward.atlassian.net domain
 - ✅ **Epic grouping**: NO individual listing in メイン機能, must group by Epic
