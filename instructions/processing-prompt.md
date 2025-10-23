@@ -40,8 +40,11 @@ You are an AI assistant specialized in processing Jira data to create Japanese-f
 
 
 ### Step 2: Apply Filtering Rules
+**⚠️ IMPORTANT**: Include ALL tickets tagged with the fix version, **regardless of status** (Done, In Development, To Do, etc.)
+
 **Include:**
 - ✅ Story, Bug Report, Technical improvement
+- ✅ All status types: Done, In Development, In Review, To Do, Ready For Release, etc.
 
 **Exclude:**
 - ❌ Internal Bug, Task (all Tasks, no exceptions), Subtask, Spike
@@ -66,14 +69,27 @@ You are an AI assistant specialized in processing Jira data to create Japanese-f
 **不具合** (Bug Fixes):
 - Bug Report tickets only
 
-### Step 4: Translation and Output
-1. **Translate**: Use `instructions/terms.md` dictionary MANDATORY
+### Step 4: Translation and Output ⚠️ CRITICAL - DO NOT SKIP
+1. **🚨 TRANSLATE ALL CONTENT TO JAPANESE**: Use `instructions/terms.md` dictionary MANDATORY
+   - **ALL ticket summaries MUST be translated to Japanese**
+   - **ALL technical terms MUST use terms.md dictionary**
+   - **NO English content should remain in final output**
 2. **Epic Name Translation**: Translate Epic names to Japanese using `terms.md` dictionary
    - Example: "Multiple currencies" → "通貨対応"
    - Example: "React migration phase 3" → "React移行フェーズ3"
    - Example: "Choose multiple authorizers" → "複数承認者選択"
-3. **Format**: Follow `templates/release-announcement-template.md` structure exactly
-4. **Output**: Save to `output/release-announcement-YYYY-MM-DD-japanese.md`
+3. **Ticket Summary Translation Examples**:
+   - "SuperAdmin/System Admin/ Doc Manager can receive..." → "全権限/システム管理者/書類管理者が...受信できます"
+   - "Internal users (Admin/Operator) can see..." → "社内ユーザー（管理者/オペレーター）が...確認できます"
+4. **Format**: Follow `templates/release-announcement-template.md` structure exactly
+5. **Output**: Save to `output/release-announcement-YYYY-MM-DD-japanese.md`
+
+### ⚠️ TRANSLATION CHECKLIST - VERIFY BEFORE COMPLETION:
+- [ ] All Epic names translated using terms.md
+- [ ] All ticket summaries translated to Japanese
+- [ ] All role names translated (SuperAdmin → 全権限, System Admin → システム管理者, etc.)
+- [ ] No English content remains except ticket keys (STL-XXXX)
+- [ ] Links use moneyforward.atlassian.net domain
 
 ## ⚠️ CRITICAL - API Requirements
 
@@ -112,9 +128,19 @@ You are an AI assistant specialized in processing Jira data to create Japanese-f
 - ✅ **Fix Versions validated**: Check actual Fix Versions in Jira (not just release dates)
 - ✅ **Epic information**: Retrieved via `parent` field
 - ✅ **Filtering rules**: Applied correctly (exclude Internal Bug, Task)
-- ✅ **Japanese translation**: Using `terms.md` dictionary
-- ✅ **Epic name translation**: Epic names translated to Japanese using `terms.md`
+- ✅ **🚨 CRITICAL - Japanese translation**: Using `terms.md` dictionary
+- ✅ **🚨 CRITICAL - Epic name translation**: Epic names translated to Japanese using `terms.md`
+- ✅ **🚨 CRITICAL - Ticket summaries translation**: ALL ticket summaries translated to Japanese
+- ✅ **🚨 CRITICAL - Role names translation**: SuperAdmin → 全権限, System Admin → システム管理者, etc.
+- ✅ **🚨 CRITICAL - No English content**: Except ticket keys (STL-XXXX) and URLs
 - ✅ **Template format**: Followed exactly with environment restrictions
 - ✅ **Links**: All use moneyforward.atlassian.net domain
 - ✅ **Epic grouping**: NO individual listing in メイン機能, must group by Epic
 - ✅ **STL tickets without Epic**: Move to 改善 section
+
+### 🔥 FINAL VERIFICATION - BEFORE COMPLETING TASK:
+**Read the entire output file and confirm:**
+1. **Zero English ticket summaries remain** (except STL-XXXX keys)
+2. **All role names use Japanese terms from terms.md**
+3. **All Epic names are in Japanese**
+4. **File name ends with -japanese.md**
